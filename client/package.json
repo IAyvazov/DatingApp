@@ -21,6 +21,7 @@
     "@kolkov/ngx-gallery": "^2.0.1",
     "bootswatch": "^5.2.2",
     "font-awesome": "^4.7.0",
+    "ng2-file-upload": "^2.0.0-3",
     "ngx-bootstrap": "^6.2.0",
     "ngx-spinner": "^14.0.0",
     "ngx-toastr": "^16.0.1",
