@@ -1,7 +1,11 @@
 import { Component } from '@angular/core';
+import { take } from 'rxjs';
 
 import { Member } from 'src/app/models/member';
 import { Pagination } from 'src/app/models/pagination';
+import { User } from 'src/app/models/user';
+import { UserParams } from 'src/app/models/userParams';
+import { AccountService } from 'src/app/services/account.service';
 import { MembersService } from 'src/app/services/members.service';
 
 @Component({
@@ -12,17 +16,29 @@ import { MembersService } from 'src/app/services/members.service';
 export class MemberListComponent {
   members: Member[] = [];
   pagination: Pagination | undefined;
-  pageNumber = 1;
-  pageSize = 5;
+  userParams: UserParams;
+  user: User;
+ genderList = [{value: 'male' ,display: 'Males'}, {value: 'female' ,display: 'Females'}]
 
-  constructor(private memberService: MembersService) { }
+  constructor(private memberService: MembersService,private accoutService: AccountService){
+    this.accoutService.currentUser$.pipe(take(1)).subscribe({
+      next: user => {
+        if(user){
+          this.userParams = new UserParams(user);
+          this.user = user;
+        }
+      }
+    })
+   }
 
   ngOnInit(): void {
     this.loadMembers();
   }
 
   loadMembers(){
-    this.memberService.getMembers(this.pageNumber,this.pageSize).subscribe({
+    if(!this.userParams) return;
+
+    this.memberService.getMembers(this.userParams).subscribe({
       next: response => {
         if(response.result && response.pagination){
           this.members = response.result;
@@ -32,9 +48,16 @@ export class MemberListComponent {
     })
   }
 
+  resetFilters(){
+    if(this.user){
+      this.userParams = new UserParams(this.user);
+      this.loadMembers();
+    }
+  }
+
   pageChanged(event: any){
-    if(this.pageNumber !== event.page){
-      this.pageNumber = event.page;
+    if(this.userParams && this.userParams.pageNumber !== event.page){
+      this.userParams.pageNumber = event.page;
       this.loadMembers();
     }
   }
