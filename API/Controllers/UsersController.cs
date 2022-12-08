@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using API.Interfaces;
 using AutoMapper;
 using API.DTOs;
-using System.Security.Claims;
 using API.Extensions;
 using API.Helpers;
 
