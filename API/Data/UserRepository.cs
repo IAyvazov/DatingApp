@@ -5,6 +5,7 @@ using API.Entities;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using API.Helpers;
 
 namespace API.Data
 {
@@ -27,11 +28,13 @@ namespace API.Data
             .SingleOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<MemberDto>> GetMembersAsync()
+        public async Task<PagedList<MemberDto>> GetMembersAsync(UserParams userParams)
         {
-            return await this.context.Users
+            var query = this.context.Users
             .ProjectTo<MemberDto>(this.mapper.ConfigurationProvider)
-            .ToListAsync();
+            .AsNoTracking();
+
+            return await PagedList<MemberDto>.CreateAsync(query, userParams.PageNumber, userParams.PageSize);
         }
 
         public async Task<AppUser> GetUserByIdAsync(int id) =>
