@@ -10,7 +10,7 @@ namespace API.DTOs
 
         public string KnownAs { get; set; }
 
-        public string PhotUrl { get; set; }
+        public string PhotoUrl { get; set; }
 
         public string City { get; set; }
     }
