@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Member } from '../models/member';
+import { Pagination } from '../models/pagination';
 import { MembersService } from '../services/members.service';
 
 @Component({
@@ -10,6 +11,9 @@ import { MembersService } from '../services/members.service';
 export class ListsComponent {
   members: Member[] ;
   predicate = 'liked';
+  pageNumber = 1;
+  pageSize = 5;
+  pagination : Pagination;
 
   constructor(private memberService: MembersService){}
 
@@ -18,10 +22,18 @@ export class ListsComponent {
   }
 
   loadLikes(){
-    this.memberService.getLikes(this.predicate).subscribe({
+    this.memberService.getLikes(this.predicate, this.pageNumber, this.pageSize).subscribe({
       next: response => {
-        this.members = response
+        this.members = response.result;
+        this.pagination = response.pagination;
       }
     })
+  }
+
+  pageChanged(event: any) {
+    if (this.pageNumber !== event.page) {
+      this.pageNumber = event.page;
+      this.loadLikes();
+    }
   }
 }
