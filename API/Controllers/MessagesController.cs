@@ -6,6 +6,7 @@ using API.DTOs;
 using API.Interfaces;
 using API.Extensions;
 using API.Entities;
+using API.Helpers;
 
 namespace API.Controllers
 {
@@ -50,6 +51,19 @@ namespace API.Controllers
             if(await this.messageRepository.SaveAllAsync()) return Ok(this.mapper.Map<MessageDto>(message));
 
             return BadRequest("Faild to send message");
+        }
+
+        [HttpGet]
+
+        public async Task<ActionResult<PagedList<MessageDto>>> GetMessagesForUser([FromQuery]MessageParams messageParams)
+        {
+            messageParams.Username = this.User.GetUsername();
+
+            var messages = await this.messageRepository.GetMessagesForUser(messageParams);
+
+            Response.AddPaginationHeader(new PaginationHeader(messages.CurrentPage, messages.PageSize, messages.TotalCount, messages.TotalPages));
+
+            return messages;
         }
     }
 }
