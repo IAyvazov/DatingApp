@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
+using AutoMapper;
 
 using API.Entities;
-using Microsoft.AspNetCore.Authorization;
 using API.Interfaces;
-using AutoMapper;
 using API.DTOs;
 using API.Extensions;
 using API.Helpers;
