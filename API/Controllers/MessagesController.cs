@@ -1,100 +1,88 @@
-using Microsoft.AspNetCore.Mvc;
-
-using AutoMapper;
-
 using API.DTOs;
-using API.Interfaces;
-using API.Extensions;
 using API.Entities;
+using API.Extensions;
 using API.Helpers;
+using API.Interfaces;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
     public class MessagesController : BaseApiController
     {
-        private readonly IUserRepository userRepository;
-        private readonly IMessageRepository messageRepository;
-        private readonly IMapper mapper;
-
-        public MessagesController(IUserRepository userRepository, IMessageRepository messageRepository, IMapper mapper)
+        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _uow;
+        public MessagesController(IMapper mapper, IUnitOfWork uow)
         {
-            this.userRepository = userRepository;
-            this.messageRepository = messageRepository;
-            this.mapper = mapper;
+            _uow = uow;
+            _mapper = mapper;
         }
-
 
         [HttpPost]
         public async Task<ActionResult<MessageDto>> CreateMessage(CreateMessageDto createMessageDto)
         {
-            var username = this.User.GetUsername();
+            var username = User.GetUsername();
 
-            if(username == createMessageDto.RecipientUsername.ToLower())
+            if (username == createMessageDto.RecipientUsername.ToLower())
                 return BadRequest("You cannot send messages to yourself");
 
-            var sender = await this.userRepository.GetUserByUsernameAsync(username);
-            var recipient = await this.userRepository.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
+            var sender = await _uow.UserRepository.GetUserByUsernameAsync(username);
+            var recipient = await _uow.UserRepository.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
 
-            if(recipient == null) return NotFound();
+            if (recipient == null) return NotFound();
 
             var message = new Message
             {
                 Sender = sender,
                 Recipient = recipient,
                 SenderUsername = sender.UserName,
-                RecipientUsername = recipient.UserName, 
+                RecipientUsername = recipient.UserName,
                 Content = createMessageDto.Content
             };
 
-            this.messageRepository.AddMessage(message);
+            _uow.MessageRepository.AddMessage(message);
 
-            if(await this.messageRepository.SaveAllAsync()) return Ok(this.mapper.Map<MessageDto>(message));
+            if (await _uow.Complete()) return Ok(_mapper.Map<MessageDto>(message));
 
-            return BadRequest("Faild to send message");
+            return BadRequest("Failed to send message");
         }
 
         [HttpGet]
-
-        public async Task<ActionResult<PagedList<MessageDto>>> GetMessagesForUser([FromQuery]MessageParams messageParams)
+        public async Task<ActionResult<PagedList<MessageDto>>> GetMessagesForUser([FromQuery]
+            MessageParams messageParams)
         {
-            messageParams.Username = this.User.GetUsername();
+            messageParams.Username = User.GetUsername();
 
-            var messages = await this.messageRepository.GetMessagesForUser(messageParams);
+            var messages = await _uow.MessageRepository.GetMessagesForUser(messageParams);
 
-            Response.AddPaginationHeader(new PaginationHeader(messages.CurrentPage, messages.PageSize, messages.TotalCount, messages.TotalPages));
-
+            Response.AddPaginationHeader(new PaginationHeader(messages.CurrentPage, messages.PageSize, 
+                messages.TotalCount, messages.TotalPages));
+            
             return messages;
-        }
-
-        [HttpGet("thread/{username}")]
-        public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessageThread(string username)
-        {
-            var currentUsername = this.User.GetUsername();
-
-            return Ok(await this.messageRepository.GetMessageThread(currentUsername, username));
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteMessage(int id)
         {
-            var username = this.User.GetUsername();
+            var username = User.GetUsername();
 
-            var message  = await this.messageRepository.GetMessage(id);
+            var message = await _uow.MessageRepository.GetMessage(id);
 
-            if(message.SenderUsername != username && message.RecipientUsername != username) return Unauthorized();
+            if (message.SenderUsername != username && message.RecipientUsername != username) 
+                return Unauthorized();
 
-            if(message.SenderUsername == username) message.SenderDeleted = true;
+            if (message.SenderUsername == username) message.SenderDeleted = true;
+            if (message.RecipientUsername == username) message.RecipientDeleted = true;
 
-            if(message.RecipientUsername == username) message.RecipientDeleted = true;
-
-            if(message.SenderDeleted && message.RecipientDeleted)
+            if (message.SenderDeleted && message.RecipientDeleted) 
             {
-                this.messageRepository.DeleteMessage(message);
+                _uow.MessageRepository.DeleteMessage(message);
             }
 
-            if(await this.messageRepository.SaveAllAsync()) return Ok();
+            if (await _uow.Complete()) return Ok();
 
             return BadRequest("Problem deleting the message");
+
         }
     }
 }
