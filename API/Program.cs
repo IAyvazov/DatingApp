@@ -45,10 +45,6 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseHttpsRedirection();
-
-app.UseRouting();
-
 app.UseCors(x => x
 .AllowAnyHeader()
 .AllowAnyMethod()

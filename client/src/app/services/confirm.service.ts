@@ -28,9 +28,9 @@ export class ConfirmService {
     };
 
     this.bsModalRef = this.modalService.show(ConfirmDialogComponent, config);
-     return this.bsModalRef.onHidden?.pipe(
+     return this.bsModalRef.onHidden!.pipe(
       map(() => {
-        return this.bsModalRef?.content?.results
+        return this.bsModalRef!.content!.results
       })
     )
   }
